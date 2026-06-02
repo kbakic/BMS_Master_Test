@@ -1268,18 +1268,15 @@ void ReadAllTemps(int x)
 			uint8_t data_hi = (data >> 4) & 0x0F;
 			uint8_t data_lo = (data << 4) & 0xF0;
 
-			for (int i = 0; i < 2; i++) {
-				int id = idmapx[i];
 
-				bms_ic[id].com.tx_data[0] = LTC_ICOM_START | addr_hi;
-				bms_ic[id].com.tx_data[1] = LTC_FCOM_MASTER_NACK | addr_lo;
-				bms_ic[id].com.tx_data[2] = LTC_ICOM_BLANK | data_hi;
-				bms_ic[id].com.tx_data[3] = LTC_FCOM_MASTER_NACK_STOP | data_lo;
-				bms_ic[id].com.tx_data[4] = LTC_ICOM_NO_TRANSMIT;
-				bms_ic[id].com.tx_data[5] = 0x00;
+            bms_ic[0].com.tx_data[0] = LTC_ICOM_START | addr_hi;
+            bms_ic[0].com.tx_data[1] = LTC_FCOM_MASTER_NACK | addr_lo;
+            bms_ic[0].com.tx_data[2] = LTC_ICOM_BLANK | data_hi;
+            bms_ic[0].com.tx_data[3] = LTC_FCOM_MASTER_NACK_STOP | data_lo;
+            bms_ic[0].com.tx_data[4] = LTC_ICOM_NO_TRANSMIT;
+            bms_ic[0].com.tx_data[5] = 0x00;
 
-				LTC6811_wrcomm(UNICAST_COMMAND, bms_ic, id);
-			}
+            LTC6811_wrcomm(BROADCAST_COMMAND, bms_ic, BROADCAST_ALL_SLAVES);
 			LTC6811_stcomm();
 
 			wakeup_idle(BROADCAST_COMMAND);
