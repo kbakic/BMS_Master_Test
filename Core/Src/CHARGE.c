@@ -5,6 +5,7 @@
 #include "CHARGE.h"
 #include "stm32f4xx_hal_conf.h"
 #include "LTC681x.h"
+#include "LTC6811.h"
 
 
 void SendCANMessage(unsigned long id, uint8_t* data, CAN_HandleTypeDef hcan1, uint32_t canTxMailbox, CAN_TxHeaderTypeDef myTxHeader) {
@@ -23,7 +24,7 @@ uint8_t ReceiveChargerCANMessage(unsigned long id, CAN_HandleTypeDef hcan1, uint
 	  {
 	    Error_Handler();
 	  }
-	  return rx_data;
+	  return rx_data[0];
 }
 
 int GetChargingState(float soc, float temperature, float chargingCurrent, float chargingVoltage){
@@ -138,7 +139,7 @@ void GetCellVoltages(){
 
 	if(flagStartCVConversion){
 		wakeup_idle(TOTAL_IC);
-		LTC6811_adcv(MD_27KHZ_14KHZ, DCP_DISABLED, CELL_CH_ALL);
+		LTC6811_adcv(MD_27KHZ_14KHZ, DCP_DISABLED, CELL_CH_ALL, 17);
 		flagStartCVConversion = false;
 	}
 
@@ -146,7 +147,7 @@ void GetCellVoltages(){
 		wakeup_idle(TOTAL_IC);
 
 		for(int ltc=0;ltc<12;ltc++){
-			LTC6811_rdcv(CELL_CH_ALL, ltc, bms_ic);
+			LTC6811_rdcv(CELL_CH_ALL, ltc, bms_ic, 17);
 
 			CellNumSwitch(ltc);
 	}
@@ -161,13 +162,13 @@ void GetCellTemperatures(){
 	for(int i=0;i<12;i++){
 		if(flagStartAuxConversion){
 			wakeup_idle(TOTAL_IC);
-			LTC6811_adax(MD_27KHZ_14KHZ, AUX_CH_ALL);
+			LTC6811_adax(MD_27KHZ_14KHZ, AUX_CH_ALL, 17);
 			flagStartAuxConversion = false;
 			}
 
 		if(flagReadAuxConversion){
 			wakeup_idle(TOTAL_IC);
-			LTC6811_rdaux(AUX_CH_ALL, TOTAL_IC, bms_ic);
+			LTC6811_rdaux(AUX_CH_ALL, TOTAL_IC, bms_ic, 17);
 				for(int j=0;j<4;j++){
 					temperature[i][j] = bms_ic[i].aux.a_codes[j];
 					LTC681x_stcomm();

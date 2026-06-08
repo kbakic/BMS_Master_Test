@@ -84,5 +84,6 @@ int calculateChargingCurrent(int temperature, int voltage);
 void CellNumSwitch(int ltc);
 void GetCellVoltages();
 void GetCellTemperatures();
+void Error_Handler(void);
 
 #endif

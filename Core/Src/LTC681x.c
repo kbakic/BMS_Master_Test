@@ -47,6 +47,7 @@ Copyright 2017 Linear Technology Corp. (LTC)
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include "stm32f4xx_hal.h"
 
 //#include "stm32f4xx_hal.h"
 

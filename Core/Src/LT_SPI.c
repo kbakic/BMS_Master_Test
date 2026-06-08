@@ -3,6 +3,11 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+/* Max SPI frame: 4 cmd + 8*TOTAL_IC (main.c TOTAL_IC=12 → 100) */
+#define LT_SPI_MAX_FRAME 128U
+
+static uint8_t spi_rx_discard[LT_SPI_MAX_FRAME];
+static uint8_t spi_tx_dummy[LT_SPI_MAX_FRAME]; /* svi 0xFF za read fazu */
 
 extern SPI_HandleTypeDef hspi1;
 uint8_t error = 0;
@@ -33,6 +38,9 @@ void LTC6811_Initialize(void)
     if (HAL_SPI_Init(&hspi1) != HAL_OK) {
         //_Error_Handler(__FILE__, __LINE__);
     }
+    for (uint32_t i = 0; i < LT_SPI_MAX_FRAME; i++) {
+        spi_tx_dummy[i] = 0xFFU;
+    }
 }
 
 void cs_low(void)
@@ -54,16 +62,17 @@ void spi_write(uint8_t data)
     }
 }
 
-void spi_write_array(uint8_t len,
-    uint8_t data[])
+void spi_write_array(uint8_t len, uint8_t data[])
 {
-    uint8_t ret_val;
-    uint8_t i;
-
-    for (i = 0; i < len; i++) {
-        if (HAL_SPI_TransmitReceive(&hspi1, (uint8_t*)&data[i], &ret_val, 1, 100) != HAL_OK) {
-            error++;
-        }
+    if (len == 0U) {
+        return;
+    }
+    if (len > LT_SPI_MAX_FRAME) {
+        error++;
+        return;
+    }
+    if (HAL_SPI_TransmitReceive(&hspi1, data, spi_rx_discard, len, 100U) != HAL_OK) {
+        error++;
     }
 }
 
@@ -72,19 +81,21 @@ void spi_write_read(uint8_t tx_Data[],
     uint8_t* rx_data,
     uint8_t rx_len)
 {
-    uint8_t data;
-    uint8_t dummy = 0xFF;
-
-    // Transfer data to LTC6811
-    for (uint8_t i = 0; i < tx_len; i++) {
-        // Transmit byte.
-        HAL_SPI_TransmitReceive(&hspi1, &tx_Data[i], &data, 1, 10);
+    if (tx_len > LT_SPI_MAX_FRAME || rx_len > LT_SPI_MAX_FRAME) {
+        error++;
+        return;
     }
 
-    // Receive data from DC2260A board.
-    for (uint8_t i = 0; i < rx_len; i++) {
-        // Receive byte.
-        HAL_SPI_TransmitReceive(&hspi1, &dummy, &rx_data[i], 1, 10);
+    if (tx_len > 0U) {
+        if (HAL_SPI_TransmitReceive(&hspi1, tx_Data, spi_rx_discard, tx_len, 100U) != HAL_OK) {
+            error++;
+        }
+    }
+
+    if (rx_len > 0U) {
+        if (HAL_SPI_TransmitReceive(&hspi1, spi_tx_dummy, rx_data, rx_len, 100U) != HAL_OK) {
+            error++;
+        }
     }
 }
 
